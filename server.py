@@ -1,44 +1,18 @@
-import socket
-import threading
+from flask import Flask
+from flask_socketio import SocketIO, emit
 
-HOST = '0.0.0.0'
-PORT = 65432
-clients = []
+app = Flask(__name__)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-def handle_client(conn, addr):
-    print(f"[CONNECTED] {addr}")
-    while True:
-        try:
-            msg = conn.recv(1024).decode('utf-8')
-            if msg:
-                broadcast(msg, conn)
-            else:
-                remove(conn)
-                break
-        except:
-            break
+@app.route('/')
+def index():
+    return "WebSocket Server Running!"
 
-def broadcast(message, sender):
-    for client in clients:
-        if client != sender:
-            try:
-                client.send(message.encode('utf-8'))
-            except:
-                remove(client)
+@socketio.on('place_block')
+def handle_place_block(data):
+    print(f"Block placed: {data}")
+    emit('place_block', data, broadcast=True)
 
-def remove(connection):
-    if connection in clients:
-        clients.remove(connection)
+if __name__ == '__main__':
+    socketio.run(app, host='0.0.0.0', port=65432)
 
-def start_server():
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind((HOST, PORT))
-    server.listen()
-    print(f"[SERVER STARTED] Listening on {HOST}:{PORT}")
-    while True:
-        conn, addr = server.accept()
-        clients.append(conn)
-        threading.Thread(target=handle_client, args=(conn, addr), daemon=True).start()
-
-if __name__ == "__main__":
-    start_server()
