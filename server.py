@@ -4,9 +4,10 @@ from flask_socketio import SocketIO, emit
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+# НОВЫЙ маршрут для проверки
 @app.route('/')
 def index():
-    return "WebSocket Server Running!"
+    return "Server is running!"
 
 @socketio.on('place_block')
 def handle_place_block(data):
