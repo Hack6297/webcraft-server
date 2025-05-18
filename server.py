@@ -1,25 +1,20 @@
-
+import os
 from flask import Flask, send_file, render_template_string
-from flask_socketio import SocketIO
 
 app = Flask(__name__)
-socketio = SocketIO(app, cors_allowed_origins="*")
 
 @app.route('/')
 def index():
     return render_template_string(open("templates/index.html", encoding="utf-8").read())
 
 @app.route('/download')
-def download():
-    return send_file("client_ursina_with_multiplayer.zip", as_attachment=True)
-
-@socketio.on('connect')
-def connect():
-    print("Client connected")
-
-@socketio.on('disconnect')
-def disconnect():
-    print("Client disconnected")
+def download_file():
+    # Path to your ZIP file
+    zip_file_path = 'path_to_your_webcraft.zip'  # Make sure the file exists in this location
+    if os.path.exists(zip_file_path):
+        return send_file(zip_file_path, as_attachment=True, download_name="WebCraft.zip", mimetype='application/zip')
+    else:
+        return "File not found", 404
 
 if __name__ == '__main__':
-    socketio.run(app, host="0.0.0.0", port=10000)
+    app.run(debug=True)
