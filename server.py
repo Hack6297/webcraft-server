@@ -1,4 +1,7 @@
 import os
+
+PORT = int(os.environ.get("PORT", 10000))
+
 import django
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
