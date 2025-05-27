@@ -4,11 +4,12 @@ from socketio.asgi import ASGIApp
 
 sio = AsyncServer(async_mode='asgi', cors_allowed_origins='*')
 app = FastAPI()
-app.mount("/", ASGIApp(sio))
 
+@app.get("/")
 def index():
     return {"status": "WebCraft multiplayer server is live!"}
 
+app.mount("/", ASGIApp(sio))  # <-- Монтируем после app.get("/")
 
 players = {}
 
