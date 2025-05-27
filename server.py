@@ -3,7 +3,8 @@ from socketio import AsyncServer
 from socketio.asgi import ASGIApp
 
 sio = AsyncServer(async_mode='asgi', cors_allowed_origins='*')
-fastapi_app = FastAPI()
+app = FastAPI()
+app.mount("/", ASGIApp(sio))
 
 @fastapi_app.get("/")
 def index():
