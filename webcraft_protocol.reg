@@ -1,0 +1,12 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\webcraft]
+@="URL:WebCraft Protocol"
+"URL Protocol"=""
+
+[HKEY_CLASSES_ROOT\webcraft\shell]
+
+[HKEY_CLASSES_ROOT\webcraft\shell\open]
+
+[HKEY_CLASSES_ROOT\webcraft\shell\open\command]
+@="\"C:\\Users\\Admin\\Downloads\\WebCraft_Launcher\\webcraft_client.bat\" \"%1\""
