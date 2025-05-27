@@ -1,10 +1,15 @@
+from fastapi import FastAPI
 from socketio import AsyncServer
 from socketio.asgi import ASGIApp
-from fastapi import FastAPI
 
 sio = AsyncServer(async_mode='asgi', cors_allowed_origins='*')
-app = FastAPI()
-app.mount("/", ASGIApp(sio))
+fastapi_app = FastAPI()
+
+@fastapi_app.get("/")
+def index():
+    return {"status": "WebCraft multiplayer server is live!"}
+
+app = ASGIApp(sio, other_asgi_app=fastapi_app)
 
 players = {}
 
