@@ -41,7 +41,7 @@ async def player_position(sid, data):
 
     await sio.emit('player_update', players)
 
-    }
+    
     await sio.emit('player_update', players)
 
 @sio.event
