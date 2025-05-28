@@ -11,7 +11,6 @@ player = FirstPersonController()
 player.gravity = 0.5
 Sky()
 
-sio = socketio.Client()
 sio.connect(
     'https://webcraft-launcher-mhyb.onrender.com',
     transports=['websocket'],
