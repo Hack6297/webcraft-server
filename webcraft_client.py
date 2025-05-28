@@ -12,7 +12,11 @@ player.gravity = 0.5
 Sky()
 
 sio = socketio.Client()
-sio.connect('https://webcraft-launcher-mhyb.onrender.com', transports=['websocket'], socketio_path='/socket.io')
+sio.connect(
+    'https://webcraft-launcher-mhyb.onrender.com',
+    transports=['websocket'],
+    socketio_path='/ws/socket.io'
+)
 
 voxels, others = {}, {}
 colors = [color.white, color.red, color.green, color.blue, color.black, color.yellow, color.gray, color.brown, color.violet]
