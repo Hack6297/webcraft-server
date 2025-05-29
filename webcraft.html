@@ -1,17 +1,20 @@
-
 <!DOCTYPE html>
 <html>
 <head>
-    <title>WebCraft Launcher</title>
-    <style>
-        body { background-color: #1e1e1e; color: white; font-family: Arial, sans-serif; text-align: center; margin-top: 100px; }
-        button { padding: 10px 20px; font-size: 18px; cursor: pointer; background: #00c853; border: none; border-radius: 5px; color: white; }
-        button:hover { background: #009624; }
-    </style>
+    <title>Launch WebCraft</title>
 </head>
-<body>
-    <h1>Welcome to WebCraft</h1>
-    <p>Click below to launch the game:</p>
-    <button onclick="window.location.href='webcraft://Player/'">Play WebCraft</button>
+<body style="background-color: black; color: white; text-align: center; font-family: sans-serif;">
+    <h1>WebCraft Launcher</h1>
+    <p>Click the button below to launch WebCraft</p>
+    <button onclick="launchWebCraft()" style="padding: 10px 20px; font-size: 18px;">Launch</button>
+
+    <script>
+        function launchWebCraft() {
+            const nickname = prompt("Enter your nickname:");
+            if (nickname) {
+                window.location.href = `webcraft://${nickname}/`;
+            }
+        }
+    </script>
 </body>
 </html>
