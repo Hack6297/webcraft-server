@@ -1,55 +1,74 @@
-
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
 from socketio import AsyncServer
 from socketio.asgi import ASGIApp
 
-# Socket.IO server with CORS enabled
 sio = AsyncServer(async_mode='asgi', cors_allowed_origins='*')
-
-# FastAPI application
 fastapi_app = FastAPI()
 
-@fastapi_app.get("/")
-def index():
-    return {"status": "WebCraft multiplayer server is live!"}
+# HTML launch page
+@fastapi_app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    return """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>WebCraft Launcher</title>
+        <style>
+            body {
+                background-color: #111;
+                color: #0f0;
+                font-family: Consolas, monospace;
+                text-align: center;
+                padding-top: 100px;
+            }
+            button {
+                font-size: 20px;
+                padding: 10px 30px;
+                background-color: #0f0;
+                color: #000;
+                border: none;
+                cursor: pointer;
+                border-radius: 10px;
+                margin-top: 20px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>🚀 WebCraft Multiplayer Server is Live!</h1>
+        <p>Click the button below to launch the game:</p>
+        <button onclick="window.location.href='webcraft://Player/'">Launch WebCraft</button>
+    </body>
+    </html>
+    """
 
-# ASGI app combining FastAPI and Socket.IO
+# Socket.IO ASGI wrapper
 app = ASGIApp(sio, other_asgi_app=fastapi_app, socketio_path="/socket.io")
 
-# Player state
+# Multiplayer player registry
 players = {}
 
 @sio.event
 async def connect(sid, environ):
     print(f"[+] {sid} connected")
-    players[sid] = {
-        'x': 0, 'y': 0, 'z': 0,
-        'color': [255, 255, 255, 255],
-        'nickname': 'Player'
-    }
+    players[sid] = {'x': 0, 'y': 0, 'z': 0, 'color': (255, 255, 255), 'nickname': 'Player'}
     await sio.emit('player_update', players)
 
 @sio.event
 async def disconnect(sid):
     print(f"[-] {sid} disconnected")
-    if sid in players:
-        del players[sid]
-        await sio.emit('player_update', players)
+    players.pop(sid, None)
+    await sio.emit('player_update', players)
 
 @sio.event
 async def player_position(sid, data):
-    color_data = data.get('color', [255, 255, 255])
-    if len(color_data) == 3:
-        color_data.append(255)
-
     players[sid] = {
         'x': data['x'],
         'y': data['y'],
         'z': data['z'],
-        'color': color_data,
+        'color': data['color'],
         'nickname': data.get('nickname', 'Player')
     }
-
     await sio.emit('player_update', players)
 
 @sio.event
