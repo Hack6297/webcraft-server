@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from socketio import AsyncServer
@@ -27,28 +26,34 @@ app = ASGIApp(sio, other_asgi_app=fastapi_app, socketio_path="/socket.io")
 @sio.event
 async def connect(sid, environ):
     players[sid] = {'x': 0, 'y': 0, 'z': 0, 'color': [255, 255, 255, 255], 'nickname': 'Player'}
-    await sio.emit('player_update', players)
+    await sio.emit('player_update', {sid: players[sid]})
 
 @sio.event
 async def disconnect(sid):
     players.pop(sid, None)
-    await sio.emit('player_update', players)
+    await sio.emit('player_remove', {'sid': sid})
 
 @sio.event
 async def player_position(sid, data):
     color = data.get('color', [255, 255, 255])
     if len(color) == 3:
         color.append(255)
+
     players[sid] = {
         'x': data['x'], 'y': data['y'], 'z': data['z'],
         'color': color,
         'nickname': data.get('nickname', 'Player')
     }
-    await sio.emit('player_update', players)
+    await sio.emit('player_update', {sid: players[sid]}, skip_sid=sid)
 
 @sio.event
 async def block_update(sid, data):
     await sio.emit('block_update', data, skip_sid=sid)
+
+@sio.event
+async def block_remove(sid, data):
+    await sio.emit('block_remove', data, skip_sid=sid)
+
 
 @sio.event
 async def block_remove(sid, data):
