@@ -1,81 +1,89 @@
 from ursina import *
 from ursina.prefabs.first_person_controller import FirstPersonController
-import socketio, sys
-
-nickname = "Player"
-if len(sys.argv) > 1:
-    nickname = sys.argv[1]
+import socketio
 
 app = Ursina()
+sio = socketio.Client()
+
 player = FirstPersonController()
-player.gravity = 0.5
-Sky()
+player.cursor.visible = True
+player.gravity = 0.0
+player.speed = 5
 
-sio.connect(
-    'https://webcraft-launcher-mhyb.onrender.com',
-    transports=['websocket'],
-    socketio_path='/ws/socket.io'
-)
+others = {}
 
-voxels, others = {}, {}
-colors = [color.white, color.red, color.green, color.blue, color.black, color.yellow, color.gray, color.brown, color.violet]
-current_color = colors[0]
-
-def create_voxel(pos, col):
-    key = str(pos)
-    if key not in voxels:
-        voxels[key] = Button(parent=scene, model='cube', position=pos, color=col, texture='white_cube', origin_y=0.5, collider='box')
-
-def remove_voxel(pos):
-    key = str(pos)
-    if key in voxels:
-        destroy(voxels[key])
-        del voxels[key]
-
-def update_other(sid, x, y, z, c, n):
-    if sid == sio.sid: return
-    if sid not in others:
-        others[sid] = Entity(model='cube', position=(x,y,z), scale=(1,2,1), color=c, texture='white_cube')
-        others[sid].label = Text(text=n, position=(x, y+2.2, z), scale=2, origin=(0,0), background=True)
-    else:
-        others[sid].position = (x,y,z)
-        others[sid].color = c
-        others[sid].label.text = n
-        others[sid].label.position = (x, y+2.2, z)
-
-@sio.on('block_update')
-def block_u(data): create_voxel(tuple(data['position']), color.rgb(*data['color']))
-
-@sio.on('block_remove')
-def block_r(data): remove_voxel(tuple(data['position']))
+# === Воксельный блок ===
+class Voxel(Button):
+    def __init__(self, position=(0, 0, 0), texture='white_cube'):
+        super().__init__(
+            parent=scene,
+            position=position,
+            model='cube',
+            origin_y=0.5,
+            texture=texture,
+            color=color.white,
+            scale=1
+        )
 
 @sio.on('player_update')
-def player_u(data): [update_other(k, v['x'], v['y'], v['z'], color.rgb(*v['color']), v['nickname']) for k,v in data.items()]
+def player_u(data):
+    for sid, v in data.items():
+        if sid == sio.sid:
+            continue
+        x, y, z = v['x'], v['y'], v['z']
+        c = v['color']
+        nick = v.get('nickname', 'Player')
 
-for x in range(20):
-    for z in range(20):
-        create_voxel((x, 0, z), color.green)
+        if len(c) == 3:
+            c.append(1)
+
+        if sid not in others:
+            others[sid] = Entity(
+                model='cube',
+                position=(x, y, z),
+                scale=(1, 2, 1),
+                color=color.rgba(*c),
+                texture='white_cube',
+                name=nick
+            )
+        else:
+            others[sid].position = (x, y, z)
+            others[sid].color = color.rgba(*c)
+
+@sio.on('player_remove')
+def player_r(data):
+    sid = data['sid']
+    if sid in others:
+        destroy(others[sid])
+        del others[sid]
+
+@sio.on('block_update')
+def place_block(data):
+    Voxel(position=tuple(data['position']), texture='white_cube')
+
+@sio.on('block_remove')
+def remove_block(data):
+    for e in scene.entities:
+        if e.position == tuple(data['position']) and isinstance(e, Voxel):
+            destroy(e)
+            break
 
 def update():
     sio.emit('player_position', {
-        'x': player.x, 'y': player.y, 'z': player.z,
-        'color': (current_color.r, current_color.g, current_color.b),
-        'nickname': nickname
+        'x': player.x,
+        'y': player.y,
+        'z': player.z,
+        'color': [255, 255, 0],
+        'nickname': 'Player'
     })
 
 def input(key):
-    global current_color
-    hit = raycast(camera.world_position, camera.forward, distance=5, ignore=(player,))
-    if hit.hit and hasattr(hit.entity, 'position'):
-        pos = hit.entity.position
-        if key == 'left mouse down':
-            build_pos = pos + hit.normal
-            create_voxel(build_pos, current_color)
-            sio.emit('block_update', {'position': tuple(build_pos), 'color': (current_color.r, current_color.g, current_color.b)})
-        elif key == 'right mouse down':
-            remove_voxel(pos)
-            sio.emit('block_remove', {'position': tuple(pos)})
-    if key.isdigit() and 1 <= int(key) <= len(colors):
-        current_color = colors[int(key)-1]
+    if key == 'left mouse down':
+        sio.emit('block_update', {'position': [round(player.x + camera.forward.x), round(player.y + camera.forward.y), round(player.z + camera.forward.z)]})
+    elif key == 'right mouse down':
+        sio.emit('block_remove', {'position': [round(player.x + camera.forward.x), round(player.y + camera.forward.y), round(player.z + camera.forward.z)]})
 
+# === Запуск ===
+sio.connect('https://webcraft-launcher-mhyb.onrender.com', transports=['websocket'], socketio_path='/socket.io')
 app.run()
+
